@@ -1,0 +1,264 @@
+================================================================================
+                    DOCUMENTACIÓN DE CASOS DE PRUEBA DE ESTRÉS
+                      Sistema de Autenticación JWT - Backend Ventas
+================================================================================
+
+Fecha: 20 de Enero, 2025
+Versión: 1.0
+Autor: Amazon Q Developer
+
+================================================================================
+1. INFORMACIÓN GENERAL DEL PROYECTO
+================================================================================
+
+Proyecto: Sistema de Autenticación JWT para Ventas
+Tecnología: NestJS + TypeScript + MySQL + JWT
+Endpoints Probados: 
+  - POST /auth/register
+  - POST /auth/login
+
+Configuración de Pruebas:
+  - URL Base: http://localhost:3001/auth
+  - Usuarios Concurrentes: 10
+  - Requests por Usuario: 5
+  - Total de Requests por Test: 50
+  - Timeout: 60 segundos
+
+================================================================================
+2. CASOS DE PRUEBA IMPLEMENTADOS
+================================================================================
+
+--------------------------------------------------------------------------------
+CASO DE PRUEBA #1: REGISTER STRESS TEST
+--------------------------------------------------------------------------------
+
+ID: ST-REG-001
+Nombre: Prueba de Estrés de Registro de Usuarios
+Objetivo: Evaluar el rendimiento del endpoint de registro bajo carga concurrente
+
+Descripción:
+Simula 10 usuarios concurrentes realizando 5 registros cada uno (50 requests 
+totales) con datos válidos y emails únicos generados con timestamp.
+
+Datos de Entrada:
+  - Email: testuser{index}_{timestamp}@test.com
+  - Password: TestPass123!
+  - FullName: Test User {index}
+  - Roles: user
+
+Criterios de Aceptación:
+  - Tasa de éxito >= 60%
+  - Tiempo total < 45 segundos
+  - Status HTTP 201 para registros exitosos
+  - Respuesta incluye ID de usuario y token JWT
+
+Métricas Evaluadas:
+  - Requests totales y exitosas
+  - Tiempo total de ejecución
+  - Tiempo promedio de respuesta
+  - Requests por segundo
+  - Tasa de éxito porcentual
+
+--------------------------------------------------------------------------------
+CASO DE PRUEBA #2: LOGIN STRESS TEST
+--------------------------------------------------------------------------------
+
+ID: ST-LOG-001
+Nombre: Prueba de Estrés de Inicio de Sesión
+Objetivo: Evaluar el rendimiento del endpoint de login bajo carga concurrente
+
+Descripción:
+Simula 10 usuarios concurrentes realizando 5 logins cada uno (50 requests 
+totales) usando las mismas credenciales válidas.
+
+Precondiciones:
+  - Usuario de prueba creado: logintest@test.com
+
+Datos de Entrada:
+  - Email: logintest@test.com
+  - Password: TestPass123!
+
+Criterios de Aceptación:
+  - Tasa de éxito >= 80%
+  - Tiempo total < 30 segundos
+  - Status HTTP 201 para logins exitosos
+  - Todas las respuestas exitosas incluyen token JWT válido
+
+Métricas Evaluadas:
+  - Requests totales y exitosas
+  - Tiempo total de ejecución
+  - Tiempo promedio de respuesta
+  - Requests por segundo
+  - Validación de presencia de token JWT
+
+--------------------------------------------------------------------------------
+CASO DE PRUEBA #3: LOGIN FAILURE TEST - CREDENCIALES INVÁLIDAS
+--------------------------------------------------------------------------------
+
+ID: ST-LOG-FAIL-001
+Nombre: Prueba de Estrés de Login con Credenciales Inválidas
+Objetivo: Verificar el manejo de errores de autenticación bajo carga
+
+Descripción:
+Simula 10 usuarios concurrentes realizando 5 intentos de login cada uno 
+(50 requests totales) con credenciales incorrectas pero válidas en formato.
+
+Datos de Entrada:
+  - Email: nonexistent@test.com (usuario inexistente)
+  - Password: WrongPassword123! (password incorrecto)
+
+Criterios de Aceptación:
+  - Tasa de éxito = 0% (TODAS las requests deben fallar)
+  - Errores = 50 (total de requests)
+  - Tiempo total < 15 segundos
+  - Status HTTP 401/403 para errores de autenticación
+
+Propósito:
+Validar que el sistema rechaza consistentemente credenciales inválidas bajo 
+carga y no presenta vulnerabilidades de seguridad.
+
+--------------------------------------------------------------------------------
+CASO DE PRUEBA #4: LOGIN FAILURE TEST - DATOS MALFORMADOS
+--------------------------------------------------------------------------------
+
+ID: ST-LOG-FAIL-002
+Nombre: Prueba de Estrés de Login con Datos Malformados
+Objetivo: Verificar la validación de entrada bajo carga concurrente
+
+Descripción:
+Simula 10 usuarios concurrentes realizando 5 intentos de login cada uno 
+(50 requests totales) con datos que no cumplen las validaciones de formato.
+
+Datos de Entrada:
+  - Email: invalid-email (formato inválido, sin @)
+  - Password: 123 (muy corto, no cumple regex)
+
+Criterios de Aceptación:
+  - Tasa de éxito = 0% (TODAS las requests deben fallar)
+  - Errores = 50 (total de requests)
+  - Tiempo total < 10 segundos (validación debe ser rápida)
+  - Status HTTP 400 para errores de validación
+
+Propósito:
+Validar que el sistema de validación (class-validator) funciona correctamente 
+bajo carga y rechaza datos malformados antes del procesamiento.
+
+================================================================================
+3. CONFIGURACIÓN TÉCNICA
+================================================================================
+
+Herramientas Utilizadas:
+  - Jest: Framework de testing
+  - Axios: Cliente HTTP para requests
+  - TypeScript: Lenguaje de programación
+  - NestJS: Framework del backend
+
+Archivos Implementados:
+  - src/stress-tests/auth-stress.test.ts (Pruebas con Jest)
+  - src/stress-tests/run-stress-tests.ts (Script independiente)
+  - src/stress-tests/debug-connection.ts (Diagnóstico)
+  - src/stress-tests/README.md (Documentación técnica)
+
+Scripts NPM:
+  - npm run test:stress (Ejecutar con Jest)
+  - npm run stress:run (Script independiente)
+  - npm run stress:debug (Diagnóstico de conexión)
+
+================================================================================
+4. RESULTADOS ESPERADOS
+================================================================================
+
+Casos de Éxito (ST-REG-001, ST-LOG-001):
+  - Tasa de éxito: 80-100%
+  - Tiempo de respuesta: 100-200ms promedio
+  - Throughput: 5-10 requests/segundo
+  - 0 errores de conexión o timeout
+
+Casos de Fallo (ST-LOG-FAIL-001, ST-LOG-FAIL-002):
+  - Tasa de éxito: 0%
+  - Tiempo de respuesta: <100ms promedio
+  - Errores consistentes y apropiados
+  - No crasheos del servidor
+
+================================================================================
+5. INTERPRETACIÓN DE RESULTADOS
+================================================================================
+
+Prueba Exitosa:
+  - Tasa de éxito >= criterio definido
+  - Tiempos dentro de límites establecidos
+  - Sin errores de infraestructura
+  - Respuestas consistentes y válidas
+
+Prueba Aceptable:
+  - Tasa de éxito >= 70% (para casos de éxito)
+  - Algunos errores menores aceptables
+  - Tiempos ligeramente elevados pero funcionales
+
+Prueba Fallida:
+  - Tasa de éxito < criterio mínimo
+  - Errores de conexión o timeout
+  - Tiempos excesivos
+  - Comportamiento inconsistente
+
+================================================================================
+6. EJECUCIÓN DE PRUEBAS
+================================================================================
+
+Pasos para Ejecutar:
+
+1. Iniciar el servidor:
+   npm run start:dev
+
+2. En otra terminal, ejecutar pruebas:
+   npm run stress:run          (Script independiente con salida detallada)
+   npm run test:stress         (Pruebas con Jest)
+   npm run stress:debug        (Diagnóstico de conexión)
+
+3. Verificar resultados:
+   - Register: >= 60% éxito
+   - Login: >= 80% éxito
+   - Login Failures: 0% éxito (deben fallar)
+
+================================================================================
+7. MANTENIMIENTO Y EVOLUCIÓN
+================================================================================
+
+Recomendaciones:
+  - Ejecutar pruebas antes de cada release
+  - Monitorear métricas de rendimiento en producción
+  - Ajustar parámetros según capacidad del servidor
+  - Implementar pruebas adicionales para nuevos endpoints
+
+Escalabilidad:
+  - Aumentar usuarios concurrentes gradualmente
+  - Probar con diferentes tamaños de payload
+  - Implementar pruebas de carga sostenida
+  - Validar comportamiento con base de datos poblada
+
+================================================================================
+8. RESUMEN DE ARCHIVOS CREADOS
+================================================================================
+
+Archivos de Prueba:
+  ✓ src/stress-tests/auth-stress.test.ts
+  ✓ src/stress-tests/run-stress-tests.ts
+  ✓ src/stress-tests/debug-connection.ts
+
+Documentación:
+  ✓ src/stress-tests/README.md
+  ✓ src/stress-tests/test-cases.rtf
+  ✓ src/stress-tests/test-cases.txt
+
+Scripts Agregados a package.json:
+  ✓ "test:stress": "jest src/stress-tests/auth-stress.test.ts --testTimeout=60000"
+  ✓ "stress:run": "ts-node -r tsconfig-paths/register src/stress-tests/run-stress-tests.ts"
+  ✓ "stress:debug": "ts-node -r tsconfig-paths/register src/stress-tests/debug-connection.ts"
+
+================================================================================
+
+Fecha de Última Actualización: 20 de Enero, 2025
+Estado: Implementado y Validado
+Próxima Revisión: Febrero 2025
+
+================================================================================

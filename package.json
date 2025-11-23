@@ -16,7 +16,10 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:stress": "jest src/stress-tests/auth-stress.test.ts --testTimeout=60000",
+    "stress:run": "ts-node -r tsconfig-paths/register src/stress-tests/run-stress-tests.ts",
+    "stress:debug": "ts-node -r tsconfig-paths/register src/stress-tests/debug-connection.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
